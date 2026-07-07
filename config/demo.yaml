@@ -29,6 +29,7 @@ serial:
   dry_run: true
   port: COM3
   baudrate: 115200
+  control_hz: 12
 
 server:
   host: 0.0.0.0

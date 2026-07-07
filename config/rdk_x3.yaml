@@ -36,6 +36,7 @@ serial:
   port: /dev/ttyS3
   baudrate: 115200
   timeout_sec: 0.02
+  control_hz: 12
 
 server:
   host: 0.0.0.0

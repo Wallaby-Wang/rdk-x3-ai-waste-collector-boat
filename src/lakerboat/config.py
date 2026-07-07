@@ -75,6 +75,7 @@ class SerialConfig:
     baudrate: int = 115200
     timeout_sec: float = 0.02
     dry_run: bool = True
+    control_hz: float = 12.0
 
 
 @dataclass(slots=True)

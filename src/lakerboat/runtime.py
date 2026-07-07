@@ -20,6 +20,7 @@ class BoatRuntime:
         self.detector = create_detector(config.detector)
         self.status = BoatStatus(serial=self.serial.status)
         self.latest_jpeg = encode_jpeg(None)
+        self._last_serial_write_at = -999.0
         self._lock = threading.Lock()
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
@@ -41,8 +42,9 @@ class BoatRuntime:
 
     def emergency_stop(self) -> None:
         self.controller.stop()
-        decision = self.controller.update([], now=monotonic())
-        self.serial.write(decision.control, decision.navigation, decision.light)
+        now = monotonic()
+        decision = self.controller.update([], now=now)
+        self._write_control_if_due(decision, now)
         with self._lock:
             self.status.control = decision.control
             self.status.navigation = decision.navigation
@@ -89,7 +91,7 @@ class BoatRuntime:
                 last_frame_age_sec=0.0,
             )
 
-        self.serial.write(decision.control, decision.navigation, decision.light)
+        self._write_control_if_due(decision, now)
         with self._lock:
             self.status.camera = camera
             self.status.serial = self.serial.status
@@ -99,3 +101,10 @@ class BoatRuntime:
             self.status.detections = detections
             self.status.updated_at = time()
             self.latest_jpeg = jpeg
+
+    def _write_control_if_due(self, decision, now: float) -> None:
+        interval = 1.0 / max(1.0, self.config.serial.control_hz)
+        urgent = decision.navigation.state in {"STOP", "ERROR"}
+        if urgent or now - self._last_serial_write_at >= interval:
+            self.serial.write(decision.control, decision.navigation, decision.light)
+            self._last_serial_write_at = now

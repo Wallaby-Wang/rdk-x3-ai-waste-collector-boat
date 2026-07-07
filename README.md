@@ -1,33 +1,73 @@
-# RDK X3 AI 自动驾驶水面垃圾收集船
+# RDK X3 AI Autonomous Surface Waste Collection Boat
 
-本仓库是面向 2026 全国大学生嵌入式芯片与系统设计竞赛企业赛题的完整开源工程。项目以 RDK X3 为上层智能计算平台，结合 IMX219 摄像头、YOLOv5 目标检测、视觉伺服状态机、ESP32-S3 下位机控制、TB6612FNG 双推进电机和 WS2812B 状态灯，构成一艘面向校园人工湖、景观水池和实验水池的小型 AI 自动驾驶水面垃圾收集船。
+[![CI](https://github.com/Wallaby-Wang/rdk-x3-ai-waste-collector-boat/actions/workflows/ci.yml/badge.svg)](https://github.com/Wallaby-Wang/rdk-x3-ai-waste-collector-boat/actions/workflows/ci.yml)
 
-项目目标不是只展示识别框，而是形成从视觉感知、目标锁定、船体对准、自动接近到导流收集的闭环演示。
+English | [中文说明](README_cn.md)
 
-## Features
+This repository contains the complete open-source engineering implementation for an RDK X3 based AI autonomous surface waste collection boat. The project is built for an embedded chip and system design competition task and follows the system described in the project report: RDK X3 performs camera capture, local YOLO inference and high-level navigation decisions, while ESP32-S3 handles UART command parsing, PWM motor control and WS2812B status feedback.
 
-- RDK X3 端 FastAPI 服务，提供实时大屏、MJPEG 视频流、状态 JSON 和急停接口。
-- D-Robotics RDK X3 Bernoulli2 官方 YOLOv5 `.bin` 模型推理链路，默认使用 YOLOv5n，附 YOLOv5s 可选权重。
-- 视觉伺服状态机：`SEARCH`、`LOCKED`、`ALIGN`、`APPROACH`、`COLLECT`、`RETRY`、`STOP`、`ERROR`。
-- ESP32-S3 PlatformIO 固件，解析 RDK 串口命令并驱动 TB6612FNG 双电机与 WS2812B 灯带。
-- 保留比赛展示 UI：`ui/Target-UI.html` 不改视觉结构，服务端运行时接入 `/stream.mjpg` 与 `/api/status`。
-- 支持无硬件 demo/mock 模式，方便本地预览、CI 和评委快速理解系统闭环。
+The goal is not only to show object detection boxes. The system closes the loop from visual perception to target locking, differential steering, low-speed approach and guided collection through the middle intake channel of the boat.
+
+## Project Highlights
+
+- RDK X3 FastAPI runtime with dashboard, MJPEG stream, JSON status endpoint and emergency stop API.
+- D-Robotics RDK X3 Bernoulli2 YOLOv5 model path, with official YOLOv5n and YOLOv5s `.bin` model assets and SHA256 checksums.
+- Visual servo state machine for `SEARCH`, `LOCKED`, `ALIGN`, `APPROACH`, `COLLECT`, `RETRY`, `STOP` and `ERROR`.
+- ESP32-S3 PlatformIO firmware for TB6612FNG dual motor drive and WS2812B status light control.
+- UART protocol compatible with simple debugging commands and structured motor-control frames.
+- Demo/mock mode so the dashboard and control loop can run without hardware.
+- Open-source project structure with deployment documentation, wiring notes, model notes, protocol documentation, tests, CI, license and contribution guidance.
+
+## System Architecture
+
+```mermaid
+flowchart LR
+  A["IMX219 camera"] --> B["RDK X3 frame capture"]
+  B --> C["YOLOv5 BPU inference"]
+  C --> D["Target selection"]
+  D --> E["Visual servo state machine"]
+  E --> F["UART control frame"]
+  F --> G["ESP32-S3"]
+  G --> H["TB6612FNG dual motors"]
+  G --> I["WS2812B status strip"]
+  H --> J["Align, approach and guide target into collector"]
+```
 
 ## Repository Layout
 
 ```text
 .
-├── config/                 # demo 与 RDK X3 上板配置
-├── docs/                   # 部署、接线、模型和协议说明
-├── firmware/esp32_s3/      # ESP32-S3 + TB6612FNG + WS2812B 固件
-├── models/                 # RDK X3 YOLOv5 BPU 模型与校验文件
-├── scripts/                # 模型下载与 RDK 模型加载检查
-├── src/lakerboat/          # RDK X3 Python 后端和控制算法
-├── tests/                  # Python 单元测试
-└── ui/                     # 原始大屏 UI 与 Logo
+├── config/                 # Demo and RDK X3 runtime configuration
+├── docs/                   # Deployment, wiring, model and protocol docs
+├── firmware/esp32_s3/      # ESP32-S3 motor and status-light firmware
+├── models/                 # RDK X3 YOLOv5 BPU models and checksums
+├── scripts/                # Model download and RDK model smoke checks
+├── src/lakerboat/          # RDK X3 Python runtime and control logic
+├── tests/                  # Python tests
+└── ui/                     # Competition dashboard UI and logo
 ```
 
+## Report Alignment
+
+The implementation is intentionally mapped to the project report.
+
+| Report requirement | Repository implementation |
+| --- | --- |
+| RDK X3 as upper controller | `src/lakerboat` runtime, camera, detector, state machine and web service |
+| IMX219 / front camera input | `camera.py`, `config/rdk_x3.yaml`, `/stream.mjpg` |
+| YOLO-based target detection | `detection.py`, `models/*.bin`, `docs/model.md` |
+| Vision-guided differential navigation | `control.py`, visual servo state machine |
+| ESP32-S3 lower controller | `firmware/esp32_s3` PlatformIO project |
+| TB6612FNG dual motor drive | `board_config.h`, `main.cpp`, wiring docs |
+| UART command protocol | `serial_link.py`, `protocol.h`, `docs/protocol.md` |
+| 10-12 Hz control refresh and fail-safe stop | `serial.control_hz: 12`, RDK command throttling, ESP32-S3 900 ms watchdog |
+| WS2812B green/blue/red status display | ESP32 firmware and `docs/hardware-wiring.md` |
+| Water pump as assisted collection load | `PIN_PUMP` reserved in firmware, explained in wiring docs |
+| Complete source and deployment notes | README, `docs/`, tests, CI, license and contribution files |
+
 ## Quick Start: Demo Mode
+
+Demo mode uses generated frames and mock serial output. It is useful for local review, CI and demonstrating the full software loop without RDK X3 hardware.
 
 ```bash
 python -m venv .venv
@@ -42,54 +82,43 @@ Open:
 http://127.0.0.1:8000
 ```
 
-Demo mode uses a generated mock water target and mock serial output. It proves the dashboard, status schema, state machine and service contract without requiring RDK X3 or ESP32-S3.
-
 ## RDK X3 Deployment
 
 On the RDK X3:
 
 ```bash
 sudo apt update
-sudo apt install -y python3-pip python3-opencv
+sudo apt install -y git python3-pip python3-opencv
+python3 -m pip install --upgrade pip
 python3 -m pip install -e .
 bash scripts/download_models.sh
 python3 scripts/rdk_model_smoke.py
 lakerboat run --config config/rdk_x3.yaml
 ```
 
-Then open `http://<rdk-ip>:8000` from a PC on the same network.
+Open from a PC on the same network:
 
-More details:
+```text
+http://<rdk-ip>:8000
+```
+
+Detailed documents:
 
 - [RDK X3 deployment](docs/deployment-rdk-x3.md)
 - [Hardware wiring](docs/hardware-wiring.md)
 - [Serial and HTTP protocol](docs/protocol.md)
 - [Model notes](docs/model.md)
-
-## System Flow
-
-```mermaid
-flowchart LR
-  A["IMX219 camera"] --> B["RDK X3 frame capture"]
-  B --> C["YOLOv5 BPU inference"]
-  C --> D["Target selection"]
-  D --> E["Visual servo state machine"]
-  E --> F["UART command frame"]
-  F --> G["ESP32-S3"]
-  G --> H["TB6612FNG left/right motors"]
-  G --> I["WS2812B state light"]
-  H --> J["Boat aligns, approaches, collects"]
-```
+- [Software architecture](docs/architecture.md)
 
 ## Runtime Interfaces
 
-- `GET /` - left-side monitoring dashboard.
-- `GET /stream.mjpg` - MJPEG annotated camera stream.
-- `GET /api/status` - JSON status consumed by the UI.
+- `GET /` - competition dashboard.
+- `GET /stream.mjpg` - annotated MJPEG video stream.
+- `GET /api/status` - JSON status consumed by the dashboard.
 - `GET /api/health` - service health check.
 - `POST /api/control/stop` - emergency stop.
 
-The serial command sent from RDK X3 to ESP32-S3 is:
+The RDK X3 to ESP32-S3 control frame is:
 
 ```text
 <A,left,right,state,light,pump>\n
@@ -101,19 +130,42 @@ Example:
 <A,51,89,APPROACH,2,0>
 ```
 
+The default UART baud rate is 115200 bps. The RDK runtime sends motor frames at up to 12 Hz, while `STOP` and `ERROR` states are transmitted immediately. The ESP32-S3 firmware stops both motors if no valid command is received for about 900 ms.
+
+The firmware also supports debug commands:
+
+```text
+SEARCH
+LEFT
+RIGHT
+FORWARD
+COLLECT
+STOP
+```
+
 ## Validation
+
+Python tests:
 
 ```bash
 python -m pip install -e .[dev]
 pytest
 ```
 
-PlatformIO firmware build:
+Firmware build:
 
 ```bash
 cd firmware/esp32_s3
 pio run
 ```
+
+The GitHub Actions workflow runs both Python tests and ESP32-S3 firmware compilation.
+
+## Open-Source Notes
+
+- The repository contains source code, firmware, configuration, model download scripts, deployment instructions and CI.
+- Raw project report documents and competition PDFs are intentionally not included in the repository.
+- The included RDK X3 YOLOv5 `.bin` model files are official D-Robotics public model assets, with checksums recorded in `models/SHA256SUMS`.
 
 ## License
 

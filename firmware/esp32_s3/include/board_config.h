@@ -31,4 +31,4 @@ static constexpr int LED_BRIGHTNESS = 40;
 // Set to a GPIO number if a MOSFET pump switch is added later.
 static constexpr int PIN_PUMP = -1;
 
-static constexpr unsigned long COMMAND_TIMEOUT_MS = 1500;
+static constexpr unsigned long COMMAND_TIMEOUT_MS = 900;
