@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+
+# Runtime outputs
+logs/
+captures/
+*.mjpg
+*.mp4
+*.avi
+
+# Local secrets and machine config
+.env
+*.local.yaml
+
+# Raw project handoff materials should not be published from this repo.
+*.docx
+*.pdf
+~$*
+
+# PlatformIO
+.pio/
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/

@@ -1,0 +1,38 @@
+camera:
+  mode: mock
+  width: 640
+  height: 480
+  fps: 20
+
+detector:
+  mode: mock
+  conf_threshold: 0.35
+  iou_threshold: 0.45
+
+control:
+  frame_width: 640
+  frame_height: 480
+  align_deadband: 0.18
+  approach_area_ratio: 0.12
+  collect_area_ratio: 0.22
+  target_lost_timeout_sec: 1.2
+  search_left: 34
+  search_right: -28
+  approach_speed: 58
+  collect_speed: 28
+  turn_speed: 54
+  steer_gain: 44
+  max_motor: 100
+
+serial:
+  enabled: true
+  dry_run: true
+  port: COM3
+  baudrate: 115200
+
+server:
+  host: 0.0.0.0
+  port: 8000
+  poll_ms: 700
+  ui_path: ui/Target-UI.html
+  logo_path: ui/Logo.png

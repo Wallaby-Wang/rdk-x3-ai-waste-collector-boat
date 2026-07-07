@@ -1,0 +1,9 @@
+RDK X3 AI Waste Collector Boat
+Copyright 2026 Laker Team
+
+This project uses D-Robotics RDK X3 model deployment concepts and optional
+official RDK Model Zoo YOLOv5 Bernoulli2 model files. The model download
+scripts fetch those files from D-Robotics public archives.
+
+The dashboard UI in ui/Target-UI.html is a project-specific competition UI
+asset supplied with the project materials.
